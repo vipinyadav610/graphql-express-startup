@@ -2,6 +2,7 @@ import {
     GraphQLObjectType,
     GraphQLString,
     GraphQLInt,
+    GraphQLList,
     GraphQLSchema
 } from 'graphql'
 import _ from 'lodash'
@@ -14,11 +15,11 @@ const companies = [
 ]
 
 const users = [
-    { id: '1', firstName: 'gaurav', age: 26, companyID: '1' },
-    { id: '2', firstName: 'rishabh', age: 25, companyID: '5' },
-    { id: '3', firstName: 'prashant', age: 24, companyID: '2' },
-    { id: '4', firstName: 'ryan', age: 23, companyID: '4' },
-    { id: '5', firstName: 'vaidehi', age: 22, companyID: '3' }
+    { id: '1', firstName: 'gaurav', age: 26, companyID: '1', friends: ['2', '3'] },
+    { id: '2', firstName: 'rishabh', age: 25, companyID: '5', friends: ['1', '3'] },
+    { id: '3', firstName: 'prashant', age: 24, companyID: '2', friends: ['1', '2'] },
+    { id: '4', firstName: 'ryan', age: 23, companyID: '4', friends: ['1', '5'] },
+    { id: '5', firstName: 'vaidehi', age: 22, companyID: '3', friends: ['2', '5'] }
 ]
 const CompanyType = new GraphQLObjectType({
     name: 'Company',
@@ -28,6 +29,20 @@ const CompanyType = new GraphQLObjectType({
         description: { type: GraphQLString }
     }
 })
+const FriendsType = new GraphQLObjectType({
+    name: 'friends',
+    fields: {
+        id: { type: GraphQLString },
+        firstName: { type: GraphQLString },
+        age: { type: GraphQLInt },
+        companyID: {
+            type: CompanyType,
+            resolve(parentValue, args) {
+                return _.find(companies, { id: parentValue.companyID })
+            }
+        }
+    }
+})
 
 const UserType = new GraphQLObjectType({
     name: 'User',
@@ -35,6 +50,18 @@ const UserType = new GraphQLObjectType({
         id: { type: GraphQLString },
         firstName: { type: GraphQLString },
         age: { type: GraphQLInt },
+        friends: {
+            type: new GraphQLList(FriendsType),
+            resolve(parentValue, args) {
+                const friends = []
+                parentValue.friends.filter((id) => {
+                    friends.push(_.find(users, { id }))
+
+                })
+                return friends
+
+            }
+        },
         companyID: {
             type: CompanyType,
             resolve(parentValue, args) {
